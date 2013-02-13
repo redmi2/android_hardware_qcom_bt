@@ -16,20 +16,25 @@
 
 LOCAL_PATH := $(call my-dir)
 
-ifneq ($(BOARD_HAVE_BLUETOOTH_QCOM),)
+ifeq ($(BOARD_HAVE_BLUETOOTH_QCOM),true)
 
 include $(CLEAR_VARS)
 
 BDROID_DIR:= external/bluetooth/bluedroid
+DEV_COMM:= device/common
 
 LOCAL_SRC_FILES := \
         src/bt_vendor_qcom.c \
         src/hardware.c \
-        src/userial_vendor.c
+        src/userial_vendor_qcom.c \
+        src/hardware_ar3k.c \
+        src/userial_vendor_ar3k.c\
+        ../../../../device/common/libbt/src/upio.c
 
 LOCAL_C_INCLUDES += \
         $(LOCAL_PATH)/include \
-        $(BDROID_DIR)/hci/include
+        $(BDROID_DIR)/hci/include \
+        $(DEV_COMM)/libbt/include
 
 LOCAL_SHARED_LIBRARIES := \
         libcutils

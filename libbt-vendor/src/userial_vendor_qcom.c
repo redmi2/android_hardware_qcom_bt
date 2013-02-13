@@ -16,7 +16,7 @@
 
 /******************************************************************************
  *
- *  Filename:      userial_vendor.c
+ *  Filename:      userial_vendor_qcom.c
  *
  *  Description:   Contains vendor-specific userial functions
  *
@@ -30,7 +30,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include "bt_vendor_qcom.h"
-#include "userial_vendor.h"
+#include "userial_vendor_qcom.h"
 
 bt_hci_transport_device_type bt_hci_set_transport()
 {

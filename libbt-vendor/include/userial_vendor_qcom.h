@@ -16,15 +16,15 @@
 
 /******************************************************************************
  *
- *  Filename:      userial_vendor.h
+ *  Filename:      userial_vendor_qcom.h
  *
  *  Description:   Contains vendor-specific definitions used in serial port
  *                 controls
  *
  ******************************************************************************/
 
-#ifndef USERIAL_VENDOR_H
-#define USERIAL_VENDOR_H
+#ifndef USERIAL_VENDOR_QCOM_H
+#define USERIAL_VENDOR_QCOM_H
 
 /* Variables to identify the platform */
 /*BT HS UART TTY DEVICE */
@@ -60,5 +60,5 @@ int bt_hci_init_transport ( int *pFd );
 
 int bt_hci_deinit_transport(int *pFd);
 
-#endif /* USERIAL_VENDOR_H */
+#endif /* USERIAL_VENDOR_QCOM_H */
 
