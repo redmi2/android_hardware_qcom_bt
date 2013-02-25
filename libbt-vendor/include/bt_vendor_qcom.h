@@ -19,7 +19,7 @@
 
 #include "bt_vendor_lib.h"
 #include "vnd_buildcfg.h"
-#include "userial_vendor.h"
+#include "userial_vendor_qcom.h"
 
 #ifndef FALSE
 #define FALSE  0
