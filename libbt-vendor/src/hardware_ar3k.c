@@ -849,8 +849,11 @@ static int ps_config_download(int fd, int tag_count)
 {
 	if (write_ps_cmd(fd, PS_RESET, PS_RAM_SIZE) < 0)
 		return -1;
-	else
-		return 0;
+
+	if (tag_count > 0)
+		if (write_ps_cmd(fd, PS_WRITE, tag_count) < 0)
+			return -1;
+	return 0;
 }
 
 static int write_bdaddr(int pConfig, char *bdaddr)
