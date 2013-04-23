@@ -36,6 +36,11 @@ LOCAL_C_INCLUDES += \
         $(BDROID_DIR)/hci/include \
         $(DEV_COMM)/libbt/include
 
+ifeq ($(BOARD_HAS_QCA_BT_AR3002), true)
+LOCAL_C_FLAGS := \
+        -DBT_WAKE_VIA_PROC
+endif #BOARD_HAS_QCA_BT_AR3002
+
 LOCAL_SHARED_LIBRARIES := \
         libcutils
 
