@@ -30,6 +30,12 @@
 #define TRUE   (!FALSE)
 #endif
 
+typedef enum {
+    BT_SOC_IRIS,
+    BT_SOC_ATH,
+    BT_SOC_WCN
+}bt_soc_type;
+
 // File discriptor using Transport
 extern int fd;
 

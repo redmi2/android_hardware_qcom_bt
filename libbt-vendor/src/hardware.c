@@ -44,7 +44,7 @@
 
 int hw_config(int nState)
 {
-    ALOGI("Starting hciattach daemon");
+    ALOGI("%s: Starting hciattach daemon", __FUNCTION__);
     char *szState[] = {"true", "false"};
     char *szReqSt = NULL;
 
@@ -53,7 +53,7 @@ int hw_config(int nState)
     else
         szReqSt = szState[0];
 
-    ALOGI("try to set %s", szReqSt);
+    ALOGI("%s: try to set %s", __FUNCTION__, szReqSt);
 
     if (property_set("bluetooth.hciattach", szReqSt) < 0){
         ALOGE("Property Setting fail");
@@ -67,12 +67,12 @@ int readTrpState()
 {
     char szBtStatus[20] = {0, };
     if(property_get("bluetooth.status", szBtStatus, "") < 0){
-        ALOGE("Fail to get bluetooth satus");
+        ALOGE("%s: Fail to get bluetooth satus", __FUNCTION__);
         return FALSE;
     }
 
     if(!strncmp(szBtStatus, "on", strlen("on"))){
-        ALOGI("bluetooth satus is on");
+        ALOGI("%s: Bluetooth Intialization complete.", __FUNCTION__);
         return TRUE;
     }
     return FALSE;
