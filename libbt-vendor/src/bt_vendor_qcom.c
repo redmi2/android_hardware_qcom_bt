@@ -56,6 +56,18 @@ uint8_t vnd_local_bd_addr[6]={0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 int btSocAth=0;
 
+#ifdef WIFI_BT_STATUS_SYNC
+#include <string.h>
+#include <errno.h>
+#include <dlfcn.h>
+#include "cutils/properties.h"
+
+static const char WIFI_PROP_NAME[]    = "wlan.driver.status";
+static const char SERVICE_PROP_NAME[]    = "bluetooth.hsic_ctrl";
+
+#define WIFI_BT_STATUS_LOCK    "/data/shared/wifi_bt_lock"
+#endif /* WIFI_BT_STATUS_SYNC */
+
 /******************************************************************************
 **  Local type definitions
 ******************************************************************************/
@@ -64,6 +76,56 @@ int btSocAth=0;
 /******************************************************************************
 **  Functions
 ******************************************************************************/
+#ifdef WIFI_BT_STATUS_SYNC
+int bt_semaphore_create(void)
+{
+    int fd;
+
+    fd = open(WIFI_BT_STATUS_LOCK, O_RDWR);
+    return fd;
+}
+
+int bt_semaphore_get(int fd)
+{
+    int ret;
+
+    if (fd < 0)
+        return -1;
+
+    ret = flock(fd, LOCK_EX);
+    if (ret != 0) {
+        ALOGE("can't hold lock: %s\n", strerror(errno));
+        return -1;
+    }
+
+    return ret;
+}
+
+int bt_semaphore_release(int fd)
+{
+    int ret;
+
+    if (fd < 0)
+        return -1;
+
+    ret = flock(fd, LOCK_UN);
+    if (ret != 0) {
+        ALOGE("can't release lock: %s\n", strerror(errno));
+        return -1;
+    }
+
+    return ret;
+}
+
+int bt_semaphore_destroy(int fd)
+{
+    if (fd < 0)
+        return -1;
+
+    return close (fd);
+}
+
+#endif /* WIFI_BT_STATUS_SYNC */
 
 /*****************************************************************************
 **
@@ -113,6 +175,10 @@ static int op(bt_vendor_opcode_t opcode, void *param)
             {
                 if (btSocAth) {
                     int *state = (int *) param;
+#ifdef WIFI_BT_STATUS_SYNC
+                    char wifi_status[PROPERTY_VALUE_MAX];
+                    int lock_fd;
+#endif /*WIFI_BT_STATUS_SYNC*/
 
                     ALOGI("BT_VND_OP_POWER_CTRL State: %d ", *state);
 
@@ -122,6 +188,33 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                     else if (*state == BT_VND_PWR_ON) {
                         upio_set_bluetooth_power(UPIO_BT_POWER_ON);
                     }
+
+#ifdef WIFI_BT_STATUS_SYNC
+                    lock_fd = bt_semaphore_create();
+                    bt_semaphore_get(lock_fd);
+
+                    /* query wifi status */
+                    property_get(WIFI_PROP_NAME, wifi_status, "");
+
+                    /* If wlan driver is not loaded, and bt is changed from off => on */
+                    if (strncmp(wifi_status, "unloaded", strlen("unloaded")) == 0 || strlen(wifi_status) == 0) {
+                        if (*state == BT_VND_PWR_ON) {
+                            if(property_set(SERVICE_PROP_NAME, "load_wlan") < 0) {
+                                ALOGE("%s Property setting failed", SERVICE_PROP_NAME);
+                                retval = -1;
+                            }
+                        }
+                        else if (*state == BT_VND_PWR_OFF) {
+                            if(property_set(SERVICE_PROP_NAME, "unbind_hsic") < 0) {
+                                ALOGE("%s Property setting failed", SERVICE_PROP_NAME);
+                                retval = -1;
+                            }
+                       }
+                    }
+
+                    bt_semaphore_release(lock_fd);
+                    bt_semaphore_destroy(lock_fd);
+#endif /* WIFI_BT_STATUS_SYNC */
                 }
                 else {
                     nState = *(int *) param;
