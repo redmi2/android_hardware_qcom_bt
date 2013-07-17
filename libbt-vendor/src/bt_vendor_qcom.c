@@ -65,7 +65,7 @@ int btSocAth=0;
 static const char WIFI_PROP_NAME[]    = "wlan.driver.status";
 static const char SERVICE_PROP_NAME[]    = "bluetooth.hsic_ctrl";
 
-#define WIFI_BT_STATUS_LOCK    "/data/shared/wifi_bt_lock"
+#define WIFI_BT_STATUS_LOCK    "/data/connectivity/wifi_bt_lock"
 #endif /* WIFI_BT_STATUS_SYNC */
 
 /******************************************************************************
@@ -81,7 +81,7 @@ int bt_semaphore_create(void)
 {
     int fd;
 
-    fd = open(WIFI_BT_STATUS_LOCK, O_RDWR);
+    fd = open(WIFI_BT_STATUS_LOCK, O_RDONLY);
     return fd;
 }
 
