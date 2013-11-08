@@ -33,6 +33,7 @@
 #include "bt_vendor_qcom.h"
 #include "hci_uart.h"
 #include "hci_smd.h"
+#include "bt_vendor_persist.h"
 
 /******************************************************************************
 **  Externs
@@ -323,6 +324,12 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                             switch (btSocType)
                             {
                                 case BT_SOC_ROME:
+                                    /* Always read BD address from NV file */
+                                    if(!bt_vendor_nv_read(1, vnd_local_bd_addr))
+                                    {
+                                       /* Since the BD address is configured in boot time We should not be here */
+                                       ALOGI("Failed to read BD address. Use the one from bluedroid stack/ftm");
+                                    }
                                     if(rome_soc_init(fd,vnd_local_bd_addr)<0)
                                         retval = -1;
                                     break;
