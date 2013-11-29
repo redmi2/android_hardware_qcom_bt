@@ -50,6 +50,7 @@ extern "C" {
 
 #include "bt_hci_bdroid.h"
 #include "bt_vendor_ar3k.h"
+#include "bt_vendor_qcom.h"
 
 #define MAX_CNT_RETRY 100
 
@@ -234,20 +235,7 @@ struct ps_cfg_entry ps_list[MAX_TAGS];
 }
 #endif
 
-int is_bt_soc_ath() {
-	int ret = 0;
-	char bt_soc_type[PROPERTY_VALUE_MAX];
-	ret = property_get("qcom.bluetooth.soc", bt_soc_type, NULL);
-	if (ret != 0) {
-		ALOGI("qcom.bluetooth.soc set to %s\n", bt_soc_type);
-		if (!strncasecmp(bt_soc_type, "ath3k", sizeof("ath3k")))
-			return 1;
-	} else {
-		ALOGI("qcom.bluetooth.soc not set, so using default.\n");
-	}
-
-	return 0;
-}
+extern int btSocType;
 
 /*
  * Send HCI command and wait for command complete event.
@@ -1489,22 +1477,43 @@ static int init_uart(char *dev, struct uart_t *u, int send_break, int raw)
 		return -1;
 	}
 
-	if (set_speed(fd, &ti, u->init_speed) < 0) {
-		ALOGI("Can't set initial baud rate");
-		return -1;
+	/* BT SOC initialization */
+	switch (btSocType)
+	{
+	case BT_SOC_ATH:
+		ALOGI("%s: Setting initial baud rate for ATH3k Controller", __FUNCTION__);
+		if (set_speed(fd, &ti, u->init_speed) < 0) {
+			ALOGI("Can't set initial baud rate");
+			return -1;
+		}
+		tcflush(fd, TCIOFLUSH);
+		if (send_break) {
+			tcsendbreak(fd, 0);
+			usleep(500000);
+		}
+		/* Perform NVM download */
+		ALOGI("%s: Initializing the ATH3K Controller", __FUNCTION__);
+		ath3k_init(fd,u->speed,u->init_speed,u->bdaddr, &ti);
+		break;
+	case BT_SOC_WCN:
+		ALOGI("%s: Setting final baud rate for WCN2243 Controller", __FUNCTION__);
+		if (set_speed(fd, &ti, u->speed) < 0) {
+			ALOGI("Can't set baud rate");
+			return -1;
+		}
+		tcflush(fd, TCIOFLUSH);
+		if (send_break) {
+			tcsendbreak(fd, 0);
+			usleep(500000);
+		}
+		/* NVM is laready downloaded for WCN2243 Controller */
+		break;
+	case BT_SOC_IRIS:
+	default:
+		break;
 	}
 
-	tcflush(fd, TCIOFLUSH);
-
-	if (send_break) {
-		tcsendbreak(fd, 0);
-		usleep(500000);
-	}
-
-	ath3k_init(fd,u->speed,u->init_speed,u->bdaddr, &ti);
-
-	ALOGI("Device setup complete\n");
-
+	ALOGI("%s: Device setup complete", __FUNCTION__);
 
 	tcflush(fd, TCIOFLUSH);
 
