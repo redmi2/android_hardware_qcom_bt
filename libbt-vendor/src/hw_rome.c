@@ -91,7 +91,7 @@ int get_vs_hci_event(unsigned char *rsp)
         goto failed;
     }
 
-    ALOGI("%s: Parameter Length: 0x%x", __FUNCTION__, paramlen = rsp[PLEN]);
+    ALOGI("%s: Parameter Length: 0x%x", __FUNCTION__, paramlen = rsp[EVT_PLEN]);
     ALOGI("%s: Command response: 0x%x", __FUNCTION__, rsp[CMD_RSP_OFFSET]);
     ALOGI("%s: Response type   : 0x%x", __FUNCTION__, rsp[RSP_TYPE_OFFSET]);
 
@@ -585,7 +585,6 @@ static int rome_download_rampatch(int fd)
         c = fgetc (file);
         pdata_buffer[index++] = (unsigned char)c;
     } while (c != EOF);
-    fclose(file);
 
     /* Downloading patches in segments to controller */
     ret = rome_edl_patch_download_request(fd);
@@ -689,6 +688,7 @@ int rome_get_tlv_file(char *file_path)
     pdata_buffer = (unsigned char*) malloc (sizeof(char)*fileSize);
     if (pdata_buffer == NULL) {
         ALOGE("Allocated Memory failed");
+        fclose (pFile);
         return -1;
     }
 
