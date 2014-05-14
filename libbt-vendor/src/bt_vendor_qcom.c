@@ -594,10 +594,6 @@ static int op(bt_vendor_opcode_t opcode, void *param)
             }
             break;
 
-        case BT_VND_OP_ANT_USERIAL_OPEN:
-                ALOGI("bt-vendor : BT_VND_OP_ANT_USERIAL_OPEN");
-                is_ant_req = true;
-                //fall through
         case BT_VND_OP_USERIAL_OPEN:
             {
                 int (*fd_array)[] = (int (*)[]) param;
@@ -701,17 +697,6 @@ static int op(bt_vendor_opcode_t opcode, void *param)
             }
             break;
 
-        case BT_VND_OP_ANT_USERIAL_CLOSE:
-            {
-                ALOGI("bt-vendor : BT_VND_OP_ANT_USERIAL_CLOSE");
-                property_set("wc_transport.clean_up","1");
-                if (ant_fd != -1) {
-                    ALOGE("closing ant_fd");
-                    close(ant_fd);
-                    ant_fd = -1;
-                }
-            }
-            break;
         case BT_VND_OP_USERIAL_CLOSE:
             {
                 ALOGI("bt-vendor : BT_VND_OP_USERIAL_CLOSE btSocType: %d", btSocType);
@@ -826,7 +811,6 @@ static void ssr_cleanup(void) {
     if (btSocType == BT_SOC_ROME) {
 
         /*Close both ANT and BT channels*/
-        op(BT_VND_OP_ANT_USERIAL_CLOSE, NULL);
         op(BT_VND_OP_USERIAL_CLOSE, NULL);
         /*CTRL OFF twice to make sure hw
          * turns off*/
