@@ -367,7 +367,6 @@ static int bt_powerup(int en )
         return -1;
     }
 
-/*
     if(can_perform_action(on) == false) {
         ALOGE("%s:can't perform action as it is being used by other clients", __func__);
 #ifdef WIFI_BT_STATUS_SYNC
@@ -376,7 +375,7 @@ static int bt_powerup(int en )
 #endif
         goto done;
     }
-*/
+
     ALOGE("Write %c to rfkill\n", on);
 
     /* Write value to control rfkill */
@@ -389,13 +388,12 @@ static int bt_powerup(int en )
 	return -1;
     }
 
-/*
     if(on == '0'){
         ALOGE("Stopping HCI filter as part of CTRL:OFF");
         stop_hci_filter();
         property_set("wc_transport.soc_initialized", "0");
     }
-*/
+
 #ifdef WIFI_BT_STATUS_SYNC
     /* query wifi status */
     property_get(WIFI_PROP_NAME, wifi_status, "");
@@ -659,15 +657,14 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                         break;
                     case BT_SOC_ROME:
                         {
-                            //if (!is_soc_initialized()) {
+                            if (!is_soc_initialized()) {
                                 fd = userial_vendor_open((tUSERIAL_CFG *) &userial_init_cfg);
                                 if (fd < 0) {
                                     ALOGE("userial_vendor_open returns err");
                                     retval = -1;
-                                }
-                                //    else {
+                                } else {
                                     ALOGV("rome_soc_init is started");
-                            //        property_set("wc_transport.soc_initialized", "0");
+                                    property_set("wc_transport.soc_initialized", "0");
                                     /* Always read BD address from NV file */
                                     if(!bt_vendor_nv_read(1, vnd_local_bd_addr))
                                     {
@@ -678,16 +675,13 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                                         retval = -1;
                                     } else {
                                         ALOGV("rome_soc_init is completed");
-                            //            property_set("wc_transport.soc_initialized", "1");
+                                        property_set("wc_transport.soc_initialized", "1");
                                         /*Close the UART port*/
-                                        //close(fd);
-                                        for (idx=0; idx < CH_MAX; idx++)
-                                          (*fd_array)[idx] = fd;
-                                           retval = 1;
+                                        close(fd);
                                     }
-                              //}
-                            //}
-#if 0
+                                }
+                            }
+
                             property_set("wc_transport.clean_up","0");
                             if (retval != -1) {
                                  start_hci_filter();
@@ -710,7 +704,6 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                                      retval = -1;
                                  }
                              }
-#endif
                         }
                         break;
                     default:
