@@ -40,6 +40,10 @@
 #include "hw_rome.h"
 
 #define WAIT_TIMEOUT 200000
+#define RFKILL_TYPE_RETRY_COUNT   4
+#define RFKILL_TYPE_SLEEP         400000
+#define RFKILL_STATE_SLEEP        100000
+#define RFKILL_STATE_RETRY_COUNT  4
 
 /******************************************************************************
 **  Externs
@@ -305,6 +309,7 @@ static int bt_powerup(int en )
     char rfkill_type[64], *enable_ldo_path = NULL;
     char type[16], enable_ldo[6];
     int fd, size, i, ret, fd_ldo;
+    int retry_count = RFKILL_TYPE_RETRY_COUNT;
 
     char disable[PROPERTY_VALUE_MAX];
     char state;
@@ -339,15 +344,19 @@ static int bt_powerup(int en )
     for(i=0;(rfkill_id == -1) && (rfkill_state == NULL);i++)
     {
         snprintf(rfkill_type, sizeof(rfkill_type), "/sys/class/rfkill/rfkill%d/type", i);
-        if ((fd = open(rfkill_type, O_RDONLY)) < 0)
+        while (((fd = open(rfkill_type, O_RDONLY)) < 0) && (retry_count > 0))
         {
-            ALOGE("open(%s) failed: %s (%d)\n", rfkill_type, strerror(errno), errno);
-
+            ALOGE("open(%s) failed: %s (%d) Retrying..\n", rfkill_type, strerror(errno), errno);
+            usleep(RFKILL_TYPE_SLEEP);
+            --retry_count;
+            if (!retry_count)
+            {
 #ifdef WIFI_BT_STATUS_SYNC
-            bt_semaphore_release(lock_fd);
-            bt_semaphore_destroy(lock_fd);
+                bt_semaphore_release(lock_fd);
+                bt_semaphore_destroy(lock_fd);
 #endif
-            return -1;
+                return -1;
+            }
         }
 
         size = read(fd, &type, sizeof(type));
@@ -359,19 +368,24 @@ static int bt_powerup(int en )
             break;
         }
     }
+    retry_count = RFKILL_STATE_RETRY_COUNT;
 
     /* Get rfkill State to control */
     if (rfkill_state != NULL)
     {
-        if ((fd = open(rfkill_state, O_RDWR)) < 0)
+        while (((fd = open(rfkill_state, O_RDWR)) < 0) && (retry_count > 0))
         {
-            ALOGE("open(%s) for write failed: %s (%d)",rfkill_state, strerror(errno), errno);
+            ALOGE("open(%s) for write failed: %s (%d) Retrying..",rfkill_state, strerror(errno), errno);
+            usleep(RFKILL_STATE_SLEEP);
+            --retry_count;
+            if (!retry_count)
+            {
 #ifdef WIFI_BT_STATUS_SYNC
-            bt_semaphore_release(lock_fd);
-            bt_semaphore_destroy(lock_fd);
+                bt_semaphore_release(lock_fd);
+                bt_semaphore_destroy(lock_fd);
 #endif
-
-            return -1;
+                return -1;
+            }
         }
     }
 #ifdef BT_SOC_TYPE_ROME
