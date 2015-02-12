@@ -41,6 +41,7 @@
 
 #define WAIT_TIMEOUT 200000
 #define RFKILL_TYPE_RETRY_COUNT   4
+#define MAX_RFKILL_NODES          2
 #define RFKILL_TYPE_SLEEP         400000
 #define RFKILL_STATE_SLEEP        100000
 #define RFKILL_STATE_RETRY_COUNT  4
@@ -303,6 +304,28 @@ void start_hci_filter() {
         ALOGV("%s: Exit ", __func__);
 }
 
+bool is_next_bt_rfkill_node_present(int i)
+{
+    char rfkill_type[64];
+    char type[16];
+    int fd, size;
+    snprintf(rfkill_type, sizeof(rfkill_type), "/sys/class/rfkill/rfkill%d/type", i+1);
+
+    if((i == 0) && ((fd = open(rfkill_type, O_RDONLY)) >= 0))
+    {
+        /* check if the other node present and type is bluetooth */
+        size = read(fd, &type, sizeof(type));
+        close(fd);
+
+        if ((size >= 9) && !memcmp(type, "bluetooth", 9))
+        {
+            ALOGE("BT rfkill%d node found\n", i+1);
+            return true;
+        }
+    }
+    return false;
+}
+
 /** Bluetooth Controller power up or shutdown */
 static int bt_powerup(int en )
 {
@@ -310,7 +333,7 @@ static int bt_powerup(int en )
     char type[16], enable_ldo[6];
     int fd, size, i, ret, fd_ldo;
     int retry_count = RFKILL_TYPE_RETRY_COUNT;
-
+    bool next_node_present = false;
     char disable[PROPERTY_VALUE_MAX];
     char state;
     char on = (en)?'1':'0';
@@ -341,11 +364,21 @@ static int bt_powerup(int en )
 #endif
 
     /* Assign rfkill_id and find bluetooth rfkill state path*/
-    for(i=0;(rfkill_id == -1) && (rfkill_state == NULL);i++)
+    for(i=0;(rfkill_id == -1) && (rfkill_state == NULL) && (i < MAX_RFKILL_NODES);i++)
     {
         snprintf(rfkill_type, sizeof(rfkill_type), "/sys/class/rfkill/rfkill%d/type", i);
         while (((fd = open(rfkill_type, O_RDONLY)) < 0) && (retry_count > 0))
         {
+            if(retry_count == RFKILL_TYPE_RETRY_COUNT)
+            {
+                /* check if the other node present and type is bluetooth */
+                ALOGE("Error: rfkill%d node not found\n", i);
+                if (is_next_bt_rfkill_node_present(i) == true)
+                {
+                    next_node_present =  true;
+                    break;
+                }
+            }
             ALOGE("open(%s) failed: %s (%d) Retrying..\n", rfkill_type, strerror(errno), errno);
             usleep(RFKILL_TYPE_SLEEP);
             --retry_count;
@@ -358,7 +391,12 @@ static int bt_powerup(int en )
                 return -1;
             }
         }
-
+        if(next_node_present == true)
+        {
+            ALOGE("Trying with next rfkill%d node \n", i+1);
+            next_node_present = false;
+            continue;
+        }
         size = read(fd, &type, sizeof(type));
         close(fd);
 
@@ -367,6 +405,16 @@ static int bt_powerup(int en )
             asprintf(&rfkill_state, "/sys/class/rfkill/rfkill%d/state", rfkill_id = i);
             break;
         }
+    }
+
+    if(i == MAX_RFKILL_NODES)
+    {
+#ifdef WIFI_BT_STATUS_SYNC
+        bt_semaphore_release(lock_fd);
+        bt_semaphore_destroy(lock_fd);
+#endif
+        ALOGE("Error occured with %d rfkill nodes available \n", MAX_RFKILL_NODES);
+        return -1;
     }
     retry_count = RFKILL_STATE_RETRY_COUNT;
 
