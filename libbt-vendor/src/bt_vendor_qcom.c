@@ -45,6 +45,7 @@
 #define RFKILL_TYPE_SLEEP         400000
 #define RFKILL_STATE_SLEEP        100000
 #define RFKILL_STATE_RETRY_COUNT  4
+#define BT_VND_OP_GET_LINESPEED 12
 
 /******************************************************************************
 **  Externs
@@ -710,10 +711,12 @@ static int op(bt_vendor_opcode_t opcode, void *param)
             }
             break;
 #ifdef BT_SOC_TYPE_ROME
+#ifdef ENABLE_ANT
         case BT_VND_OP_ANT_USERIAL_OPEN:
                 ALOGI("bt-vendor : BT_VND_OP_ANT_USERIAL_OPEN");
                 is_ant_req = true;
                 //fall through
+#endif
 #endif
         case BT_VND_OP_USERIAL_OPEN:
             {
@@ -847,6 +850,7 @@ static int op(bt_vendor_opcode_t opcode, void *param)
             }
             break;
 #ifdef BT_SOC_TYPE_ROME
+#ifdef ENABLE_ANT
         case BT_VND_OP_ANT_USERIAL_CLOSE:
             {
                 ALOGI("bt-vendor : BT_VND_OP_ANT_USERIAL_CLOSE");
@@ -858,6 +862,7 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                 }
             }
             break;
+#endif
 #endif
         case BT_VND_OP_USERIAL_CLOSE:
             {
@@ -1015,8 +1020,10 @@ static void ssr_cleanup(void) {
 
     if (btSocType == BT_SOC_ROME) {
 #ifdef BT_SOC_TYPE_ROME
+#ifdef ENABLE_ANT
         /*Close both ANT channel*/
         op(BT_VND_OP_ANT_USERIAL_CLOSE, NULL);
+#endif
 #endif
         /*Close both ANT channel*/
         op(BT_VND_OP_USERIAL_CLOSE, NULL);

@@ -65,7 +65,7 @@ LOCAL_MODULE_OWNER := qcom
 
 LOCAL_CFLAGS += -DBT_NV_SUPPORT
 
-include $(LOCAL_PATH)/vnd_buildcfg.mk
+#include $(LOCAL_PATH)/vnd_buildcfg.mk
 
 include $(BUILD_SHARED_LIBRARY)
 
