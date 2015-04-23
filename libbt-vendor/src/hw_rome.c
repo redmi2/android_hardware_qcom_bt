@@ -1644,7 +1644,7 @@ error:
 }
 
 
-static void enable_controller_log (int fd)
+void enable_controller_log (int fd)
 {
    int ret = 0;
    /* VS command to enable controller logging to the HOST. By default it is disabled */
@@ -1806,7 +1806,6 @@ download:
              * The property 'enablebtsoclog' used to send this command on BT init
              * sequence.
              */
-            enable_controller_log(fd);
 
             /* Disable internal LDO to use external LDO instead*/
             err = disable_internal_ldo(fd);
