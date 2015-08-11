@@ -621,6 +621,8 @@ static int op(bt_vendor_opcode_t opcode, void *param)
 
         case BT_VND_OP_FW_CFG:
             {
+                ALOGI("bt-vendor : BT_VND_OP_FW_CFG");
+                nState = *(int *) param;
                 // call hciattach to initalize the stack
                 if(bt_vendor_cbacks){
                    if (btSocType ==  BT_SOC_ROME) {
@@ -633,8 +635,11 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                            retval = -1;
                        }
                    } else {
-                       ALOGI("Bluetooth FW and transport layer are initialized");
-                       bt_vendor_cbacks->fwcfg_cb(BT_VND_OP_RESULT_SUCCESS);
+                       if(nState == BT_VND_OP_RESULT_SUCCESS)
+                          ALOGI("Bluetooth FW and transport layer are initialized");
+                       else
+                          ALOGE("Bluetooth FW and transport layer failed to initialize");
+                       bt_vendor_cbacks->fwcfg_cb(nState);
                    }
                 }
                 else{
