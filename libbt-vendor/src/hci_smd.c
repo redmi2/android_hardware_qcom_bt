@@ -77,10 +77,10 @@ int bt_hci_init_transport_id (int chId )
 
   fd = open(s_pszDevSmd[chId], (O_RDWR | O_NOCTTY));
 
-  while ((-1 == fd) && (retry < 7)) {
+  while ((-1 == fd) && (retry < 4)) {
     ALOGE("init_transport: Cannot open %s: %s\n. Retry after 2 seconds",
         s_pszDevSmd[chId], strerror(errno));
-    usleep(2000000);
+    usleep(500000);
     fd = open(s_pszDevSmd[chId], (O_RDWR | O_NOCTTY));
     retry++;
   }
