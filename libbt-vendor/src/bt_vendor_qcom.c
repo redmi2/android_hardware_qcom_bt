@@ -204,7 +204,7 @@ static int get_bt_soc_type()
     ALOGI("bt-vendor : get_bt_soc_type");
 
     ret = property_get("qcom.bluetooth.soc", bt_soc_type, NULL);
-    if (ret != 0) {
+    if (ret >= 0) {
         ALOGI("qcom.bluetooth.soc set to %s\n", bt_soc_type);
         if (!strncasecmp(bt_soc_type, "rome", sizeof("rome"))) {
             return BT_SOC_ROME;
@@ -832,12 +832,14 @@ static int op(bt_vendor_opcode_t opcode, void *param)
                                         ignore_boot_prop = TRUE;
                                     }
 #endif //READ_BT_ADDR_FROM_PROP
+#ifdef BT_NV_SUPPORT
                                     /* Always read BD address from NV file */
                                     if(ignore_boot_prop && !bt_vendor_nv_read(1, vnd_local_bd_addr))
                                     {
                                        /* Since the BD address is configured in boot time We should not be here */
                                        ALOGI("Failed to read BD address. Use the one from bluedroid stack/ftm");
                                     }
+#endif
                                     if(rome_soc_init(fd,vnd_local_bd_addr)<0) {
                                         retval = -1;
                                         userial_clock_operation(fd, USERIAL_OP_CLK_OFF);
